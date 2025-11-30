@@ -1,0 +1,159 @@
+---
+title: "all_clustering_patient"
+author: "Sydney Hamilton"
+date: "2024-08-18"
+output: html_document
+---
+```{r setup, include=FALSE}
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(Seurat))
+suppressPackageStartupMessages(library(tibble))
+library(fgsea)
+library(data.table)
+library(ggplot2)
+library(Seurat)
+library(enrichR)
+library(dplyr)
+library(cowplot)
+```
+
+```{r}
+DMSO_object = readRDS("~/Documents/Pipeline/new_cite-seq/data/import/DMSO.rds")
+
+```
+
+```{r}
+#Clustering scRNA-Seq
+
+# Normalize scRNA-seq data using SCTransform
+DMSO_scRNAseq_object <- SCTransform(DMSO_object, assay = "RNA", verbose = FALSE)
+
+DMSO_scRNAseq_object <- NormalizeData(DMSO_scRNAseq_object, assay = "RNA", verbose = FALSE)
+
+DMSO_scRNAseq_object <- ScaleData(DMSO_scRNAseq_object, assay = "RNA", verbose = FALSE)
+
+DMSO_scRNAseq_object <- FindVariableFeatures(DMSO_scRNAseq_object, assay = "RNA", selection.method = "vst", nfeatures = 2000)
+
+# Perform PCA on scRNA-seq data
+DMSO_scRNAseq_object <- RunPCA(DMSO_scRNAseq_object, assay = "RNA", verbose = FALSE)
+
+# Find neighbors and clusters
+DMSO_scRNAseq_object <- FindNeighbors(DMSO_scRNAseq_object, reduction = "pca", dims = 1:30)
+
+DMSO_scRNAseq_object <- FindClusters(DMSO_scRNAseq_object, graph.name = "RNA_snn", resolution = 0.5)
+
+DMSO_scRNAseq_object <- RunUMAP(DMSO_scRNAseq_object, dims = 1:10)
+
+plot = DimPlot(DMSO_scRNAseq_object, reduction = "pca", group.by = "RNA_snn_res.0.5", label = TRUE, pt.size = 0.5) +
+  ggtitle("DMSO scRNA-seq Clusters")
+
+#ggsave(filename = "DMSO scRNA-seq Clusters.PNG", plot = plot, width = 8, height = 6, dpi = 300)
+
+```
+
+```{r}
+# Normalize ADT data using CLR
+DMSO_ADT_object <- NormalizeData(DMSO_object, assay = "ADT", normalization.method = "CLR")
+
+DMSO_ADT_object <- ScaleData(DMSO_ADT_object, assay = "ADT", verbose = FALSE)
+
+DMSO_ADT_object <- FindVariableFeatures(DMSO_ADT_object, assay = "ADT", selection.method = "vst", nfeatures = 2000)
+
+# Perform PCA on ADT data
+DMSO_ADT_object <- RunPCA(DMSO_ADT_object, assay = "ADT", reduction.name = "apca")
+
+# Find neighbors and clusters for ADT data
+DMSO_ADT_object <- FindNeighbors(DMSO_ADT_object, reduction = "apca", dims = 1:30)
+DMSO_ADT_object <- FindClusters(DMSO_ADT_object, graph.name = "ADT_snn", resolution = 0.5)
+
+DMSO_ADT_object <- RunUMAP(DMSO_ADT_object, reduction = "apca", dims = 1:10)
+
+plot = DimPlot(DMSO_ADT_object, reduction = "apca", group.by = "ADT_snn_res.0.5", label = TRUE, pt.size = 0.5) +
+  ggtitle("DMSO ADT Clusters")
+
+ggsave(filename = "DMSO ADT Clusters.PNG", plot = plot, width = 8, height = 6, dpi = 300)
+```
+
+```{r}
+DMSO_WNN_object <- NormalizeData(DMSO_object, assay = "RNA", normalization.method = "CLR")
+
+DMSO_WNN_object <- ScaleData(DMSO_WNN_object, assay = "RNA", verbose = FALSE)
+
+DMSO_WNN_object <- FindVariableFeatures(DMSO_WNN_object, assay = "RNA", selection.method = "vst", nfeatures = 2000)
+
+# Run PCA on RNA assay
+DMSO_WNN_object <- RunPCA(DMSO_WNN_object, assay = "RNA", features = VariableFeatures(DMSO_object))
+
+DefaultAssay(DMSO_WNN_object) = "ADT"
+VariableFeatures(DMSO_WNN_object) = rownames(DMSO_WNN_object[["ADT"]])
+DMSO_WNN_object = NormalizeData(DMSO_WNN_object, normalization.method = "CLR", margin = 2) %>%
+	ScaleData() %>%
+	RunPCA(reduction.name = "apca")
+
+
+# Perform WNN integration FindMultiModalNeighbors() integrates the PCA results from both RNA and ADT data.
+DMSO_WNN_object <- FindMultiModalNeighbors(
+    DMSO_WNN_object, 
+    reduction.list = list("pca", "apca"), 
+    dims.list = list(1:30, 1:30)
+)
+
+# Find clusters using WNN
+DMSO_WNN_object <- FindClusters(DMSO_WNN_object, graph.name = "wsnn", algorithm = 3, resolution = 0.5)
+
+# Optionally, run UMAP for visualization
+DMSO_WNN_object <- RunUMAP(DMSO_WNN_object, nn.name = "weighted.nn", assay = "RNA")
+
+plot = DimPlot(DMSO_WNN_object, reduction = "umap", group.by = "wsnn_res.0.5", label = TRUE, pt.size = 0.5) +
+  ggtitle("DMSO Integrated WNN Clusters")
+
+ggsave(filename = "DMSO Integrated WNN Clusters.PNG", plot = plot, width = 8, height = 6, dpi = 300)
+```
+
+
+This portion is for mainly for fgsea exploration: fgsea script is found in fgsea folder
+```{r}
+DMSO_scRNAseq_markers = FindAllMarkers(DMSO_scRNAseq_object)
+#DMSO_scRNAseq_markers <- apply(DMSO_WNN_markers, 2, function(x) sub("^[^-]+-", "", x))
+
+#checking total number of unuique features 
+length(unique(DMSO_scRNAseq_markers$gene))
+
+#table of cluster features
+table(DMSO_scRNAseq_markers$cluster)
+```
+
+
+```{r}
+top3_markers = as.data.frame(DMSO_scRNAseq_markers %>% 
+                               group_by(cluster) %>% 
+                               top_n(n = 3, wt = avg_log2FC))
+
+# Create a dotplot the visualise the expression of genes by cluster
+Seurat::DotPlot(DMSO_scRNAseq_object, features = unique(top3_markers$gene)) +
+  # plotting parameters
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, 
+                                                     vjust = 1,
+                                                     size = 8, 
+                                                     hjust = 1)) +
+  Seurat::NoLegend()
+
+top_markers <- DMSO_scRNAseq_markers %>% 
+  group_by(cluster) %>% 
+  top_n(10, avg_log2FC)
+top_markers
+
+FeaturePlot(DMSO_scRNAseq_object, 
+            features = c("ab-CD7", "ab-CD86"), 
+            reduction = "umap"
+            )
+
+```
+
+
+
+
