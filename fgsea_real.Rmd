@@ -1,0 +1,40 @@
+---
+title: "fgsea_real"
+author: "Sydney Hamilton"
+date: "2024-08-16"
+output: html_document
+---
+
+```{r}
+# find markers for all clusters
+#findallmarkers_results = FindAllMarkers(obj, min.pct = 0.25)
+VenSNDX_WNN_markers = FindAllMarkers(VenSNDX_WNN_object, verbose = FALSE, min.pct = 0.25)
+
+# fgsea applied to each cluster
+fgsea_results = lapply(unique(VenSNDX_WNN_markers$cluster), function(x) {
+  # top DEG per cluster
+  d = VenSNDX_WNN_markers %>%
+    filter(cluster == x) %>%
+    arrange(p_val_adj) %>%
+    top_n(100)
+  # genes and padj
+  gene_list = d %>% pull(gene)
+  l2fc_list = d %>% pull(p_val_adj)
+  # define top DEG per cluster in acceptable format for fgsea
+  names(l2fc_list) = gene_list
+  print(head(l2fc_list))
+  # fgsea
+  f = fgsea(pathways = pathways, stats = l2fc_list, minSize = 15, maxSize = 100) %>%
+    arrange(padj) %>%
+    mutate(cluster = x)
+  p = plotGseaTable(pathways, l2fc_list, f, gseaParam = 0.5)
+  return(list(f, p))
+})
+fgsea_table = lapply(seq(fgsea_results), function(x) {
+  fgsea_results[[x]][[1]]
+}) %>%
+  bind_rows() %>%
+  arrange(padj)
+fwrite(fgsea_table, "fgsea-table.txt", sep = "\t")
+```
+
