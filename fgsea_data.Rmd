@@ -1,0 +1,388 @@
+---
+title: "fgsea_data"
+author: "Sydney Hamilton"
+date: "2024-08-19"
+output: html_document
+---
+```{r}
+library(fgsea)
+library(data.table)
+library(ggplot2)
+```
+
+
+```{r setup, include=FALSE}
+# Read in csvs of genesets from Van Galen
+GMP <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/GMP.csv", header = FALSE)))
+
+HSC_Prog <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/HSC_PROG.csv", header = FALSE)))
+
+Myeloid <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/Myeloid.csv", header = FALSE)))
+
+GMPlike<- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/GMPlike.csv", header = FALSE)))
+
+HSC_PROG_L <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/HSC_PROG_Like.csv", header = FALSE)))
+
+MY_L <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/Myeloidlike.csv", header = FALSE)))
+
+CDClike <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/CDClike.csv", header = FALSE)))
+
+GMP_L <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/GMPlike.csv", header = FALSE)))
+
+HSC_L <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/HSClike.csv", header = FALSE)))
+
+Monocytelike <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/Monocytelike.csv", header = FALSE)))
+
+Progenitorlike <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/Progenitorlike.csv", header = FALSE)))
+
+Promonolike <- as.vector(t(read.csv("/Users/hamiltsy/Documents/Pipeline/new_cite-seq/Gene_sets/Promonolike.csv", header = FALSE)))
+
+cell_types <- list(
+  GMP = GMP,
+  HSC_PROG = HSC_Prog, 
+  MY = Myeloid, 
+  HSCPROG = HSC_Prog, 
+  MY_L = MY_L, 
+  CDC = CDClike, 
+  GMP_L = GMPlike, 
+  HSC_L = HSC_L, 
+  MONO_L = Monocytelike, 
+  PROG_L = Progenitorlike, 
+  PROM_L = Promonolike
+)
+```
+
+```{r}
+# Filter out only significant genes
+DMSO_scRNAseq_markers.filtered <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$p_val_adj < 0.05,]
+
+DMSO_scRNAseq_markers.filtered.cluster0 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 0,]
+DMSO_scRNAseq_markers.filtered.cluster1 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 1,]
+DMSO_scRNAseq_markers.filtered.cluster2 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 2,]
+DMSO_scRNAseq_markers.filtered.cluster3 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 3,]
+DMSO_scRNAseq_markers.filtered.cluster4 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 4,]
+DMSO_scRNAseq_markers.filtered.cluster5 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 5,]
+DMSO_scRNAseq_markers.filtered.cluster6 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 6,]
+DMSO_scRNAseq_markers.filtered.cluster7 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 7,]
+DMSO_scRNAseq_markers.filtered.cluster8 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 8,]
+DMSO_scRNAseq_markers.filtered.cluster9 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 9,]
+```
+
+
+```{r}
+#per cluster markers
+table(DMSO_scRNAseq_markers$cluster)
+
+DMSO_scRNAseq_markers.cluster0 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 0,]
+DMSO_scRNAseq_markers.cluster1 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 1,]
+DMSO_scRNAseq_markers.cluster2 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 2,]
+DMSO_scRNAseq_markers.cluster3 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 3,]
+DMSO_scRNAseq_markers.cluster4 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 4,]
+DMSO_scRNAseq_markers.cluster5 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 5,]
+DMSO_scRNAseq_markers.cluster6 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 6,]
+DMSO_scRNAseq_markers.cluster7 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 7,]
+DMSO_scRNAseq_markers.cluster8 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 8,]
+DMSO_scRNAseq_markers.cluster9 <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == 9,]
+```
+
+
+```{r}
+# Define the number of clusters
+num_clusters <- 10
+
+# Initialize a list to store the plots
+plots <- list()
+
+# Loop over each cluster
+for (i in 0:(num_clusters-1)) {
+  # Filter the markers for the current cluster
+  DMSO_scRNAseq_markers.cluster <- DMSO_scRNAseq_markers[DMSO_scRNAseq_markers$cluster == i,]
+  
+  # Create a named vector for fgsea
+  fgsea_input <- setNames(object = DMSO_scRNAseq_markers.cluster$avg_log2FC, nm = rownames(DMSO_scRNAseq_markers.cluster))
+  
+  # Run fgsea
+  fgseaRes <- fgsea(pathways = cell_types, 
+                    stats    = fgsea_input,
+                    eps      = 0.0,
+                    minSize  = 15,
+                    maxSize  = 500)
+  
+  # Loop over each cell type
+  for (cell_type in cell_types) {
+    # Create the plot for the current cell type
+    plot <- plotEnrichment(cell_types[[cell_type]], fgsea_input) + labs(title=paste(cell_type, "Cluster", i))
+    
+    # Add the plot to the list
+    plots[[paste(cell_type, "Cluster", i)]] <- plot
+  }
+}
+
+# Arrange the plots in a grid
+grid <- do.call(grid.arrange, c(plots, ncol=3))
+
+# Save the grid of plots
+ggsave(filename = "DMSO_Enrichment_plots.jpg", plot = grid, path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results")
+```
+
+
+```{r}
+# Create a named vector for fgsea
+fgsea_input <- setNames(object = DMSO_scRNAseq_markers.cluster0$avg_log2FC, nm = rownames(DMSO_scRNAseq_markers.cluster0))
+
+fgseaRes <- fgsea(pathways = cell_types, 
+                  stats    = fgsea_input,
+                  eps      = 0.0,
+                  minSize  = 15,
+                  maxSize  = 500)
+
+head(fgseaRes[order(pval), ])
+
+plotGMP = plotEnrichment(cell_types[["GMP"]],
+               fgsea_input) + labs(title="GMP")
+
+plotHSCPROG = plotEnrichment(cell_types[["HSC_PROG"]],
+               fgsea_input) + labs(title="HSC_PROG")
+
+plotMY = plotEnrichment(cell_types[["MY"]],
+               fgsea_input) + labs(title="MY")
+
+plotGMP = plotEnrichment(cell_types[["GMP"]],
+               fgsea_input) + labs(title="GMP")
+
+plotMY_L = plotEnrichment(cell_types[["MY_L"]],
+               fgsea_input) + labs(title="MY_L")
+
+plotCDC = plotEnrichment(cell_types[["CDC"]],
+               fgsea_input) + labs(title="CDC")
+
+plotGMPL = plotEnrichment(cell_types[["GMP_L"]],
+               fgsea_input) + labs(title="GMP_L")
+
+plotHSCL = plotEnrichment(cell_types[["HSCL"]],
+               fgsea_input) + labs(title="HSC_L")
+
+plotMonoL = plotEnrichment(cell_types[["MONO_L"]],
+               fgsea_input) + labs(title="MONO_L")
+
+plotProgL = plotEnrichment(cell_types[["PROG_L"]],
+               fgsea_input) + labs(title="PROG_L")
+
+plotPromL = plotEnrichment(cell_types[["PROM_L"]],
+               fgsea_input) + labs(title="PROM_L")
+
+#creating grid from plots
+grid <- grid.arrange(plotNDC_GMP, plotNDC_HSCPROG, plotNDC_MY, plotTDC_GMP, plotTDC_HSCPROG, plotTDC_MY, plotTDP_CDC, plotTDP_GMPL, plotTDP_HSCL, plotTDP_MonoL, plotTDP_ProgL, plotTDP_PromL, ncol=3, nrow=4)
+
+ggsave(filename = "DMSO_Enrichment_plots_cluster0.png", plot = grid, path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results/DMSO_SC_CLUSTERS")
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(gridExtra)
+
+# Define the number of clusters
+num_clusters <- 10
+
+# Initialize a list to store the plots
+plotList <- list()
+
+# Loop over the clusters
+for (i in 0:(num_clusters-1)) {
+  # Dynamically get the filtered data frame for the current cluster
+  filtered_df <- get(paste0("DMSO_scRNAseq_markers.filtered.cluster", i))
+  
+  # Run fgsea
+  fgsea_input <- setNames(object = filtered_df$avg_log2FC, nm = rownames(filtered_df))
+  fgseaRes <- fgsea(pathways = cell_types, 
+                    stats    = fgsea_input,
+                    eps      = 0.0,
+                    minSize  = 15,
+                    maxSize  = 500)
+  
+  # Create the plot
+  topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+  topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+  topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+  plot <- plotGseaTable(cell_types[topPathways], fgsea_input, fgseaRes, 
+                gseaParam=0.5) + labs(title = paste0("DMSO Cluster ", i))
+  
+  # Store the plot in the list
+  plotList[[paste0("cluster", i)]] <- plot
+}
+
+# Arrange the plots into a grid
+grid <- do.call(grid.arrange, c(plotList, ncol=3))
+
+# Save the grid of plots
+ggsave(filename = "DMSO_Enrichment_plots.jpg", plot = grid, path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results/DMSO_SC_CLUSTERS")
+```
+
+
+```{r}
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+DMSO_GSEA = plotGseaTable(cell_types[topPathways], fgsea_input, fgseaRes, 
+              gseaParam=0.5) + labs(title = "DMSO")
+ggsave(filename = "DMSO_GSEA.png", path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results")
+```
+
+```{r}
+fgsea_input <- setNames(object = DMSO_scRNAseq_markers.cluster7$avg_log2FC, nm = rownames(DMSO_scRNAseq_markers.cluster7))
+
+fgseaRes <- fgsea(pathways = cell_types, 
+                  stats    = fgsea_input,
+                  eps      = 0.0,
+                  minSize  = 2,
+                  maxSize  = 500)
+
+head(fgseaRes[order(pval), ])
+
+topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+DMSO_GSEA = plotGseaTable(cell_types[topPathways], fgsea_input, fgseaRes, 
+              gseaParam=0.5) + labs(title = "DMSO")
+ggsave(filename = "DMSO_GSEA_cluster7.png", path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results/DMSO_SC_CLUSTERS")
+```
+
+```{r}
+#For loop for generating GS Enrichment score plots
+
+# Define the number of clusters
+num_clusters <- 10
+
+# Loop over each cluster
+for (i in 0:(num_clusters-1)) {
+  # Create a named vector for fgsea
+  fgsea_input <- setNames(object = get(paste("DMSO_scRNAseq_markers.cluster", i, sep=""))$avg_log2FC, nm = rownames(get(paste("DMSO_scRNAseq_markers.cluster", i, sep=""))))
+  
+  # Run fgsea
+  fgseaRes <- fgsea(pathways = cell_types, 
+                    stats    = fgsea_input,
+                    eps      = 0.0,
+                    minSize  = 15,
+                    maxSize  = 500)
+  
+  # Get the top pathways
+  topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+  topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+  topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+  
+  # Create the GSEA plot
+  DMSO_GSEA = plotGseaTable(cell_types[topPathways], fgsea_input, fgseaRes, 
+                gseaParam=0.5) + labs(title = paste("DMSO Cluster", i))
+  
+  # Save the plot
+  ggsave(filename = paste("DMSO_GSEA_cluster", i, "_minsize2.png", sep=""), plot = DMSO_GSEA, path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results/DMSO_SC_CLUSTERS/Negative_Results")
+}
+```
+
+```{r}
+# Load necessary libraries
+library(fgsea)
+library(ggplot2)
+library(gridExtra)
+
+# Define the number of clusters
+num_clusters <- 10
+
+# Initialize a list to store the plots
+plotList <- list()
+
+# Read the GMT file into R
+C2_pathways <- gmtPathways("~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results/c2.all.v2024.1.Hs.symbols.gmt")
+
+# Loop over the clusters
+for (i in 0:(num_clusters-1)) {
+  # Dynamically get the filtered data frame for the current cluster
+  filtered_df <- get(paste0("DMSO_scRNAseq_markers.cluster", i))
+  
+  # Add a small amount of random noise to break ties
+  filtered_df$avg_log2FC <- filtered_df$avg_log2FC + runif(nrow(filtered_df), min = -1e-10, max = 1e-10)
+
+  # Run fgsea
+  fgsea_input <- setNames(object = filtered_df$avg_log2FC, nm = rownames(filtered_df))
+  fgseaRes <- fgsea(pathways = C2_pathways, 
+                    stats    = fgsea_input,
+                    eps      = 0.0,
+                    minSize  = 15,
+                    maxSize  = 500)
+  
+  print(paste0("Cluster ", i))
+  print(dim(fgseaRes))
+  
+  
+  # Create the plot
+  topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+  topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+  topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+  plot <- plotGseaTable(C2_pathways[topPathways], fgsea_input, fgseaRes, 
+                gseaParam=0.5) + labs(title = paste0("DMSO Cluster ", i))
+  
+  # Save the plot
+  ggsave(filename = paste0("DMSO_Enrichment_plot_cluster", i, ".png"), plot = plot, path ="~/Documents/Pipeline/new_cite-seq/Olga/GSEA_results/C2_Pathway_Results")
+}
+
+
+```
+
+
+
+
+```{r}
+# Define the number of clusters
+num_clusters <- 10
+
+# Initialize a list to store the plots
+plotList <- list()
+
+# Loop over the clusters
+for (i in 0:(num_clusters-1)) {
+  # Construct the name of the data frame
+  df_name <- paste0("DMSO_scRNAseq_markers.filtered.cluster", i)
+  
+  # Print the name
+  print(paste0("Retrieving data frame: ", df_name))
+  
+  # Dynamically get the filtered data frame for the current cluster
+  filtered_df <- get(df_name)
+  
+  # Run fgsea
+  fgsea_input <- setNames(object = filtered_df$avg_log2FC, nm = rownames(filtered_df))
+  fgseaRes <- fgsea(pathways = cell_types, 
+                    stats    = fgsea_input,
+                    eps      = 0.0,
+                    minSize  = 15,
+                    maxSize  = 500)
+  
+  # Create the plot
+  topPathwaysUp <- fgseaRes[ES > 0][head(order(pval), n=10), pathway]
+  topPathwaysDown <- fgseaRes[ES < 0][head(order(pval), n=10), pathway]
+  topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+  plot <- plotGseaTable(cell_types[topPathways], fgsea_input, fgseaRes, 
+                gseaParam=0.5) + labs(title = paste0("DMSO Cluster ", i))
+  
+  # Store the plot in the list
+  plotList[[paste0("cluster", i)]] <- plot
+}
+
+# Arrange the plots into a grid
+grid <- do.call(grid.arrange, c(plotList, ncol=2))
+```
+
+```{r}
+DMSO_List = split(DMSO_scRNAseq_markers, DMSO_scRNAseq_markers$cluster)
+
+
+lapply()
+
+hist(DMSO_List[[10]]$avg_log2FC)
+```
+
+
+
+
+
